@@ -206,12 +206,116 @@ static void diffuse(int b, float* x, float* x0, float diff, float dt, int iter, 
 
 static void project(float* velocX, float* velocY, float* velocZ, float* p, float* div, int iter, int N)
 {
-	// TODO
+	for (int k = 0; k < N - 1; k++)
+	{
+		for (int j = 0; j < N - 1; j++)
+		{
+			for (int i = 0; i < N - 1; i++)
+			{
+				div[IX(i, j, k)] = -.5f * (
+					velocX[IX(i + 1, j, k)]
+					- velocX[IX(i - 1, j, k)]
+					+ velocY[IX(i, j + 1, k)]
+					- velocY[IX(i, j - 1, k)]
+					+ velocX[IX(i, j, k + 1)]
+					- velocX[IX(i, j, k - 1)]
+					) / N;
+				p[IX(i, j, k)] = 0;
+			}
+		}
+	}
+	set_bnd(0, div, N);
+	set_bnd(0, p, N);
+	lin_solve(0, p, div, 1, 6, iter, N);
+
+	for (int k = 1; k < N - 1; k++)
+	{
+		for (int j = 1; j < N - 1; j++)
+		{
+			for (int i = 1; i < N - 1; i++)
+			{
+				velocX[IX(i, j, k)] -= .5f * (p[IX(i + 1, j, k)] - p[IX(i - 1, j, k)]) * N;
+				velocY[IX(i, j, k)] -= .5f * (p[IX(i, j + 1, k)] - p[IX(i, j - 1, k)]) * N;
+				velocZ[IX(i, j, k)] -= .5f * (p[IX(i, j, k + 1)] - p[IX(i, j, k - 1)]) * N;
+			}
+		}
+	}
+	set_bnd(1, velocX, N);
+	set_bnd(2, velocY, N);
+	set_bnd(3, velocZ, N);
 }
 
 static void advect(int b, float* d, float* d0, float* velocX, float* velocY, float* velocZ, float dt, int N)
 {
-	// TODO
+	float i0, i1, j0, j1, k0, k1;
+
+	float dtx = dt * (N - 2);
+	float dty = dt * (N - 2);
+	float dtz = dt * (N - 2);
+
+	float s0, s1, t0, t1, u0, u1;
+	float tmp1, tmp2, tmp3, x, y, z;
+
+	float Nfloat = N;
+	float ifloat, jfloat, kfloat;
+	int i, j, k;
+
+	for (k = 1; k < N - 1; k++, kfloat++)
+	{
+		for (j = 1; j < N - 1; j++, jfloat++)
+		{
+			for (i = 0; i < N - 1; i++, ifloat)
+			{
+				tmp1 = dtx * velocX[IX(i, j, k)];
+				tmp2 = dty * velocY[IX(i, j, k)];
+				tmp3 = dtz * velocZ[IX(i, j, k)];
+
+				x = ifloat - tmp1;
+				y = jfloat - tmp2;
+				z = kfloat - tmp3;
+
+				if (x < .5f) x = .5f;
+				if (x > Nfloat + .5f) x = Nfloat + .5f;
+				i0 = floorf(x);
+				i1 = i0 + 1.0f;
+
+				if (y < .5f) y = .5f;
+				if (y > Nfloat + .5f) y = Nfloat + .5f;
+				j0 = floorf(y);
+				j1 = j0 + 1.0f;
+
+				if (z < .5f) z = .5f;
+				if (z > Nfloat + .5f) z = Nfloat + .5f;
+				k0 = floorf(z);
+				k1 = k0 + 1.0f;
+
+				s1 = x - i0;
+				s0 = 1.0f - s1;
+				t1 = y - j0;
+				t0 = 1.0f - t1;
+				u1 = z - k0;
+				u0 = 1.0f - u1;
+
+				int i0i = i0;
+				int i1i = i1;
+				int j0i = j0;
+				int j1i = j1;
+				int k0i = k0;
+				int k1i = k1;
+
+				d[IX(i,j,k)] = 
+					s0 * (t0 * (u0 * d0[IX(i0i, j0i, k0i)]
+						+ u1 * d0[IX(i0i, j0i, k1i)])
+						+ (t1 * (u0 * d0[IX(i0i, j1i, k0i)]
+							+ u1 * d0[IX(i0i, j1i, k1i)])))
+					+ s1 * (t0 * (u0 * d0[IX(i1i, j0i, k0i)]
+						+ u1 * d0[IX(i1i, j0i, k1i)])
+						+ (t1 * (u0 * d0[IX(i1i, j1i, k0i)]
+							+ u1 * d0[IX(i1i, j1i, k1i)])));
+			}
+		}
+	}
+	set_bnd(b, d, N);
 }
 
 void main()
