@@ -1,0 +1,6 @@
+[submodule "libraries/glfw"]
+	path = libraries/glfw
+	url = https://github.com/Weikang01/glfw
+[submodule "libraries/glew"]
+	path = libraries/glew
+	url = https://github.com/nigels-com/glew
