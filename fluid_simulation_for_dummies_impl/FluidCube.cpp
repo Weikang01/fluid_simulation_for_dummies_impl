@@ -187,11 +187,11 @@ static void diffuse(int b, float* x, float* x0, float diff, float dt, int iter, 
 
 static void project(float* velocX, float* velocY, float* velocZ, float* p, float* div, int iter, int N)
 {
-	for (int k = 0; k < N - 1; k++)
+	for (int k = 1; k < N - 1; k++)
 	{
-		for (int j = 0; j < N - 1; j++)
+		for (int j = 1; j < N - 1; j++)
 		{
-			for (int i = 0; i < N - 1; i++)
+			for (int i = 1; i < N - 1; i++)
 			{
 				div[IX(i, j, k)] = -.5f * (
 					velocX[IX(i + 1, j, k)]
@@ -245,7 +245,7 @@ static void advect(int b, float* d, float* d0, float* velocX, float* velocY, flo
 	{
 		for (j = 1; j < N - 1; j++, jfloat++)
 		{
-			for (i = 0; i < N - 1; i++, ifloat)
+			for (i = 1; i < N - 1; i++, ifloat)
 			{
 				tmp1 = dtx * velocX[IX(i, j, k)];
 				tmp2 = dty * velocY[IX(i, j, k)];
