@@ -1,6 +1,6 @@
 #include "Application.h"
-#include <GLFW/glfw3.h>
 #include <glew.h>
+#include <GLFW/glfw3.h>
 
 
 void Application::run()
