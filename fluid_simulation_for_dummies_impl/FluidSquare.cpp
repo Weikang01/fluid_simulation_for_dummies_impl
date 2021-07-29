@@ -102,16 +102,115 @@ void set_bnd_2D(int b, float* x, int N)
 
 void lin_solve_2D(int b, float* x, float* x0, float a, float c, int iter, int N)
 {
+	float cRecip = 1.f / c;
+
+	for (int k = 0; k < iter; k++)
+	{
+		for (int j = 1; j < N - 2; j++)
+		{
+			for (int i = 1; i < N - 2; i++)
+			{
+				x[IX_2D(i, j)] = (x0[IX_2D(i, j)]
+					+ a * (
+						x[IX_2D(i + 1, j)]
+						+ x[IX_2D(i - 1, j)]
+						+ x[IX_2D(i, j + 1)]
+						+ x[IX_2D(i, j - 1)]
+						)) * cRecip;
+			}
+		}
+	}
+
+	set_bnd_2D(b, x, N);
 }
 
 void diffuse_2D(int b, float* x, float* x0, float diff, float dt, int iter, int N)
 {
+	float a = dt * diff * (N - 2) * (N - 2);
+	lin_solve_2D(b, x, x0, a, 1 + 6 * a, iter, N);
 }
 
 void project_2D(float* velocX, float* velocY, float* p, float* div, int iter, int N)
 {
+	for (int j = 1; j < N - 1; j++)
+	{
+		for (int i = 1; i < N - 1; i++)
+		{
+			div[IX_2D(i, j)] = -.5f * (
+				velocX[IX_2D(i + 1, j)]
+				- velocX[IX_2D(i - 1, j)]
+				+ velocY[IX_2D(i, j + 1)]
+				- velocY[IX_2D(i, j - 1)]
+				) / N;
+			p[IX_2D(i, j)] = 0;
+		}
+	}
+	set_bnd_2D(0, div, N);
+	set_bnd_2D(0, p, N);
+	lin_solve_2D(0, p, div, 1, 6, iter, N);
+
+	for (int j = 1; j < N - 1; j++)
+	{
+		for (int i = 1; i < N - 1; i++)
+		{
+			velocX[IX_2D(i, j)] -= .5f * (p[IX_2D(i + 1, j)] - p[IX_2D(i - 1, j)]) * N;
+			velocY[IX_2D(i, j)] -= .5f * (p[IX_2D(i, j + 1)] - p[IX_2D(i, j - 1)]) * N;
+		}
+	}
+	set_bnd_2D(1, velocX, N);
+	set_bnd_2D(2, velocY, N);
 }
 
 void advect_2D(int b, float* d, float* d0, float* velocX, float* velocY, float dt, int N)
 {
+	float i0, i1, j0, j1;
+
+	float dtx = dt * (N - 2);
+	float dty = dt * (N - 2);
+
+	float s0, s1, t0, t1;
+	float tmp1, tmp2, x, y;
+
+	float Nfloat = N;
+	float ifloat = 0.f, jfloat = 0.f;
+	int i, j;
+
+	for (j = 1; j < N - 1; j++, jfloat++)
+	{
+		for (i = 1; i < N - 1; i++, ifloat)
+		{
+			tmp1 = dtx * velocX[IX_2D(i, j)];
+			tmp2 = dty * velocY[IX_2D(i, j)];
+
+			x = ifloat - tmp1;
+			y = jfloat - tmp2;
+
+			if (x < .5f) x = .5f;
+			if (x > Nfloat + .5f) x = Nfloat + .5f;
+			i0 = floorf(x);
+			i1 = i0 + 1.0f;
+
+			if (y < .5f) y = .5f;
+			if (y > Nfloat + .5f) y = Nfloat + .5f;
+			j0 = floorf(y);
+			j1 = j0 + 1.0f;
+
+			s1 = x - i0;
+			s0 = 1.0f - s1;
+			t1 = y - j0;
+			t0 = 1.0f - t1;
+
+			int i0i = i0;
+			int i1i = i1;
+			int j0i = j0;
+			int j1i = j1;
+
+			d[IX_2D(i, j)] =
+				s0 * (t0 * d0[IX_2D(i0i, j0i)]
+					+ t1 * d0[IX_2D(i0i, j1i)]) + 
+				s1 * (t0 * d0[IX_2D(i1i, j0i)]
+					+ t1 * d0[IX_2D(i1i, j1i)]);
+		}
+	}
+	set_bnd_2D(b, d, N);
 }

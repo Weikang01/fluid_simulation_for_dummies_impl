@@ -32,6 +32,10 @@ void Application::initSystem()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 }
 
+void Application::initSquare()
+{
+}
+
 void Application::mainLoop()
 {
     while (!glfwWindowShouldClose(window))
