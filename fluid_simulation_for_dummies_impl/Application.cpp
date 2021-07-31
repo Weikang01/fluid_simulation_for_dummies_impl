@@ -14,6 +14,7 @@ void Application::initSystem()
 {
     if (!glfwInit())
         return;
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Fluid Simulation", NULL, NULL);
     if (!window)
